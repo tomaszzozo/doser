@@ -1,19 +1,19 @@
 package edu.iis.mto.testreactor.doser;
 
 import edu.iis.mto.testreactor.doser.infuser.Infuser;
+import edu.iis.mto.testreactor.doser.infuser.InfuserException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MedicineDoserTest {
@@ -72,5 +72,30 @@ class MedicineDoserTest {
         InOrder callOrder = inOrder(dosageLog);
         callOrder.verify(dosageLog).logStart();
         callOrder.verify(dosageLog).logEnd();
+    }
+
+    @Test
+    void incorrectDose() {
+        medicineDoser.add(standardMedicinePackage);
+        Dose incorrectDose = Dose.of(Capacity.of(501, CapacityUnit.MILILITER), standardPeriod);
+        Receipe receipe = Receipe.of(standardMedicine, incorrectDose, 1);
+        InsufficientMedicineException result = assertThrows(InsufficientMedicineException.class, () -> medicineDoser.dose(receipe));
+        assertEquals("Medicine [name=Cough syrup]", result.getMessage());
+    }
+
+    @Test
+    void infuserException() throws InfuserException
+    {
+        medicineDoser.add(standardMedicinePackage);
+        doThrow(InfuserException.class).when(infuser).dispense(any(MedicinePackage.class), any(Capacity.class));
+        medicineDoser.dose(standardReceipe);
+
+        InOrder callOrder = inOrder(dosageLog);
+        callOrder.verify(dosageLog).logStart();
+        callOrder.verify(dosageLog).logStartDose(any(Medicine.class), any(Dose.class));
+        // Mockito twierdzi uparcie, że poniższa metoda nie wywołała się.
+        // Nie mam pojęcia dlaczego.
+        // Podczas debugowania programu proces natrafia dokładnie na tę metodę w bloku catch.
+        callOrder.verify(dosageLog).logDifuserError(any(Dose.class), anyString());
     }
 }
