@@ -75,7 +75,7 @@ class MedicineDoserTest {
     }
 
     @Test
-    void incorrectDose() {
+    void amountTooBig() {
         medicineDoser.add(standardMedicinePackage);
         Dose incorrectDose = Dose.of(Capacity.of(501, CapacityUnit.MILILITER), standardPeriod);
         Receipe receipe = Receipe.of(standardMedicine, incorrectDose, 1);
@@ -84,8 +84,16 @@ class MedicineDoserTest {
     }
 
     @Test
-    void infuserException() throws InfuserException
-    {
+    void wrongCapacityUnit() {
+        medicineDoser.add(standardMedicinePackage);
+        Dose incorrectDose = Dose.of(Capacity.of(20, CapacityUnit.LITER), standardPeriod);
+        Receipe receipe = Receipe.of(standardMedicine, incorrectDose, 1);
+        InsufficientMedicineException result = assertThrows(InsufficientMedicineException.class, () -> medicineDoser.dose(receipe));
+        assertEquals("Medicine [name=Cough syrup]", result.getMessage());
+    }
+
+    @Test
+    void infuserException() throws InfuserException {
         medicineDoser.add(standardMedicinePackage);
         doThrow(InfuserException.class).when(infuser).dispense(any(MedicinePackage.class), any(Capacity.class));
         medicineDoser.dose(standardReceipe);
@@ -97,5 +105,13 @@ class MedicineDoserTest {
         // Nie mam pojęcia dlaczego.
         // Podczas debugowania programu proces natrafia dokładnie na tę metodę w bloku catch.
         callOrder.verify(dosageLog).logDifuserError(any(Dose.class), anyString());
+    }
+
+    @Test
+    void clockTest() {
+        medicineDoser.add(standardMedicinePackage);
+        medicineDoser.dose(standardReceipe);
+
+        verify(clock, times(20)).wait(standardPeriod);
     }
 }
