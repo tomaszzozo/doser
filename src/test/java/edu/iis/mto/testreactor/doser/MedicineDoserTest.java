@@ -84,12 +84,22 @@ class MedicineDoserTest {
     }
 
     @Test
-    void wrongCapacityUnit() {
+    void incorrectCapacityUnit() {
         medicineDoser.add(standardMedicinePackage);
         Dose incorrectDose = Dose.of(Capacity.of(20, CapacityUnit.LITER), standardPeriod);
         Receipe receipe = Receipe.of(standardMedicine, incorrectDose, 1);
         InsufficientMedicineException result = assertThrows(InsufficientMedicineException.class, () -> medicineDoser.dose(receipe));
         assertEquals("Medicine [name=Cough syrup]", result.getMessage());
+    }
+
+    @Test
+    void incorrectNumberOfDosages() {
+        medicineDoser.add(standardMedicinePackage);
+        Receipe incorrectReceipe = Receipe.of(standardMedicine, standardDose, 0);
+        Receipe evenMoreIncorrectReceipe = Receipe.of(standardMedicine, standardDose, -1);
+
+        assertThrows(IllegalArgumentException.class, () -> medicineDoser.dose(incorrectReceipe));
+        assertThrows(IllegalArgumentException.class, () -> medicineDoser.dose(evenMoreIncorrectReceipe));
     }
 
     @Test
