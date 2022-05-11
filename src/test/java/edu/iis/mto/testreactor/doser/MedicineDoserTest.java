@@ -103,6 +103,22 @@ class MedicineDoserTest {
     }
 
     @Test
+    void incorrectTimePeriod() {
+        medicineDoser.add(standardMedicinePackage);
+        Period incorrectPeriod = Period.of(0, TimeUnit.HOURS);
+        Dose incorrectDose = Dose.of(standardCapacity, incorrectPeriod);
+        Receipe incorrectReceipe = Receipe.of(standardMedicine, incorrectDose, 1);
+
+        assertThrows(Exception.class, () -> medicineDoser.dose(incorrectReceipe));
+
+        Period evenMoreIncorrectPeriod = Period.of(-1, TimeUnit.HOURS);
+        Dose evenMoreIncorrectDose = Dose.of(standardCapacity, evenMoreIncorrectPeriod);
+        Receipe evenMoreIncorrectReceipe = Receipe.of(standardMedicine, evenMoreIncorrectDose, 1);
+
+        assertThrows(Exception.class, () -> medicineDoser.dose(incorrectReceipe));
+    }
+
+    @Test
     void infuserException() throws InfuserException {
         medicineDoser.add(standardMedicinePackage);
         doThrow(InfuserException.class).when(infuser).dispense(any(MedicinePackage.class), any(Capacity.class));
